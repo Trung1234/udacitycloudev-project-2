@@ -33,11 +33,35 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util.js';
   
   // Root Endpoint
   // Displays a simple message to the user
+   app.get( "/", async (req, res) => {
+    res.send("try GET /filteredimage?image_url={{}}")
+  } );
+  app.get("/filteredimage", async (req, res) => {
+    const image_url = req.query.image_url;
+    if (typeof image_url == "undefined" || !validateURL(image_url)) {
+      return res
+        .status(422)
+        .send({ message: "Unable to process the requested image url." });
+    }
+    const filteredpath = await filterImageFromURL(image_url);
+  
+    return res.status(200).sendFile(filteredpath, async () => {
+      await deleteLocalFiles([filteredpath]);
+    });
+  });
   app.get( "/", async (req, res) => {
     res.send("try GET /filteredimage?image_url={{}}")
   } );
-  
-
+  // 1. validate the image_url query
+//     inputURL: a url string to validate
+export function validateURL(inputURL) {
+  try {
+    const url = new URL(inputURL)
+    return url.protocol === "http:" || url.protocol === "https:"
+  } catch (_) {
+    return false
+  }
+}
   // Start the Server
   app.listen( port, () => {
       console.log( `server running http://localhost:${ port }` );
